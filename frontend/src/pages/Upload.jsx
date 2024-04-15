@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios"; // Import Axios for making HTTP requests
 import "../styles/upload.css"; // Import CSS file for styling
+import Swal from "sweetalert2";
 
 export default function Upload() {
 
@@ -33,12 +34,10 @@ export default function Upload() {
         selectedFiles["MFB"])
     ) {
       for (const [key, value] of Object.entries(selectedFiles)) {
-        console.log(`Key: ${key}`);
         const formData = new FormData();
         formData.append("file", value);
         formData.append("type", key);
 
-        // Make an HTTP POST request to your backend endpoint
         axios
           .post("https://1759-2402-4000-2180-7458-a957-905b-df66-8596.ngrok-free.app//upload-s3", formData, {
             headers: {
@@ -57,17 +56,65 @@ export default function Upload() {
                 console.error("Error uploading file:", error);
                 return;
               });
-            // Perform any additional actions after successful upload
           })
           .catch((error) => {
             console.error("Error uploading file:", error);
-            // Handle errors if any
+            alert("Error uploading file. Please try again");
           });
       }
     } else {
       alert("Please select all files");
     }
   };
+
+  const handleAnalyseDocs = () => {
+    if (!jobNumber) {
+      alert("Please enter a job number");
+    } else {
+      axios
+        .get(`http://localhost:4000/api/v1/documents/analyze/${jobNumber}`)
+        .then((response) => {
+          console.log("Documents analyzed successfully:", response.data);
+          // Perform any additional actions after successful analysis
+          if (response.data.success) {
+            if (response.data.data.status === "Matching") {
+              Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: "Documents are matching",
+              });
+            } else if (response.data.data.status === "Partially matching") {
+              Swal.fire({
+                icon: "warning",
+                title: "Warning!",
+                text: "Documents are partially matching",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error!",
+                text: "Documents are not matching",
+              });
+            }
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Error analyzing documents",
+              text: response.data.message,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("Error analyzing documents:", error);
+          const responseData = error.response.data;
+          Swal.fire({
+            icon: "error",
+            title: "Error analyzing documents!",
+            text: responseData.message,
+          })
+        });
+    }
+  }
 
   return (
     <div className="upload-container">
@@ -189,7 +236,7 @@ export default function Upload() {
               name="jobNumber"
             />
           </div>
-          <button className="upload-button">Analyze docs</button>
+          <button className="upload-button" onClick={handleAnalyseDocs}>Analyze docs</button>
         </div>
       )}
     </div>
