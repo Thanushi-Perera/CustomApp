@@ -1,53 +1,242 @@
-import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import axios from "axios"; // Import Axios for making HTTP requests
 import "../styles/upload.css"; // Import CSS file for styling
+import Swal from "sweetalert2";
 
 export default function Upload() {
-  const { role } = useParams();
-  const [selectedFile, setSelectedFile] = useState(null);
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+  const [selectedFiles, setSelectedFiles] = useState(null);
+  const [jobNumber, setJobNumber] = useState(null);
+
+  const userRole = localStorage.getItem("role");
+
+  const handleFileChange = (event, fileName) => {
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [fileName]: event.target.files[0],
+    }));
   };
 
   const handleUpload = () => {
-    if (selectedFile) {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-      formData.append("role", role);
+    if (!jobNumber) {
+      alert("Please enter a job number");
+    } else if (!selectedFiles) {
+      alert("Please select a file");
+    }else if (
+      (userRole === "portauthority" &&
+        selectedFiles["BL"] &&
+        selectedFiles["DOF"] &&
+        selectedFiles["DOB"] &&
+        selectedFiles["IVF"] &&
+        selectedFiles["IVB"]) ||
+      (userRole === "shippinglineagent" &&
+        selectedFiles["MFF"] &&
+        selectedFiles["MFB"])
+    ) {
+      for (const [key, value] of Object.entries(selectedFiles)) {
+        const formData = new FormData();
+        formData.append("file", value);
+        formData.append("type", key);
 
-      // Make an HTTP POST request to your backend endpoint
-      axios.post("/api/upload", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
-        .then((response) => {
-          console.log("File uploaded successfully:", response.data);
-          // Perform any additional actions after successful upload
-        })
-        .catch((error) => {
-          console.error("Error uploading file:", error);
-          // Handle errors if any
-        });
+        axios
+          .post("https://1759-2402-4000-2180-7458-a957-905b-df66-8596.ngrok-free.app//upload-s3", formData, {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          })
+          .then((response) => {
+            axios
+              .post(
+                "http://localhost:4000/api/v1/documents",
+                { ...response.data, JobNumber: jobNumber, DocType: key }
+              )
+              .catch((error) => {
+                alert("Error uploading file. Please try again");
+                console.error("Error uploading file:", error);
+                return;
+              });
+          })
+          .catch((error) => {
+            console.error("Error uploading file:", error);
+            alert("Error uploading file. Please try again");
+          });
+      }
     } else {
-      console.log("No file selected.");
+      alert("Please select all files");
     }
   };
 
+  const handleAnalyseDocs = () => {
+    if (!jobNumber) {
+      alert("Please enter a job number");
+    } else {
+      axios
+        .get(`http://localhost:4000/api/v1/documents/analyze/${jobNumber}`)
+        .then((response) => {
+          // Perform any additional actions after successful analysis
+          if (response.data.success) {
+            if (response.data.data.status === "Matching") {
+              Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: "Documents are matching",
+              });
+            } else if (response.data.data.status === "Partially matching") {
+              Swal.fire({
+                icon: "warning",
+                title: "Warning!",
+                text: "Documents are partially matching",
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Error!",
+                text: "Documents are not matching",
+              });
+            }
+          } else {
+            Swal.fire({
+              icon: "error",
+              title: "Error analyzing documents",
+              text: response.data.message,
+            });
+          }
+        })
+        .catch((error) => {
+          console.error("Error analyzing documents:", error);
+          const responseData = error.response.data;
+          Swal.fire({
+            icon: "error",
+            title: "Error analyzing documents!",
+            text: responseData.message,
+          })
+        });
+    }
+  }
+
   return (
     <div className="upload-container">
-      <div>
-        <h1>Select an option</h1>
+      {userRole === "portauthority" ? (
         <div>
-          <input type="file" onChange={handleFileChange} />
+          <h1>Select all files</h1>
+          <div>
+            <label htmlFor="shippingManifestFront" className="fileInputLabel">
+              Job Number:{" "}
+            </label>
+            <input
+              type="text"
+              onChange={(e) => setJobNumber(e.target.value)}
+              name="jobNumber"
+            />
+          </div>
+          <div>
+            <label htmlFor="billOfLading" className="fileInputLabel">
+              Bill of Lading (BL):{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "BL")}
+              name="billOfLading"
+            />
+          </div>
+          <div>
+            <label htmlFor="deliveryOrderFront" className="fileInputLabel">
+              Delivery Order Front:{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "DOF")}
+              name="deliveryOrderFront"
+            />
+          </div>
+          <div>
+            <label htmlFor="deliveryOrderBack" className="fileInputLabel">
+              Delivery Order Back:{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "DOB")}
+              name="deliveryOrderBack"
+            />
+          </div>
+          <div>
+            <label htmlFor="invoiceFront" className="fileInputLabel">
+              Invoice Front:{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "IVF")}
+              name="invoiceFront"
+            />
+          </div>
+          <div>
+            <label htmlFor="invoiceBack" className="fileInputLabel">
+              Invoice Back:{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "IVB")}
+              name="invoiceBack"
+            />
+          </div>
+          <button className="upload-button" onClick={handleUpload}>
+            Upload Files
+          </button>
+          <button className="history-button">Manifest History</button>
         </div>
-        <button className="upload-button" onClick={handleUpload}>
-          Upload File
-        </button>
-        <button className="history-button">Manifest History</button>
-      </div>
+      ) : userRole === "shippinglineagent" ? (
+        <div>
+          <h1>Select all files</h1>
+          <div>
+            <label htmlFor="shippingManifestFront" className="fileInputLabel">
+              Job Number:{" "}
+            </label>
+            <input
+              type="text"
+              onChange={(e) => setJobNumber(e.target.value)}
+              name="jobNumber"
+            />
+          </div>
+          <div>
+            <label htmlFor="shippingManifestFront" className="fileInputLabel">
+              Shipping manifest front:{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "MFF")}
+              name="shippingManifestFront"
+            />
+          </div>
+          <div>
+            <label htmlFor="shippingManifestBack" className="fileInputLabel">
+              Shipping manifest back:{" "}
+            </label>
+            <input
+              type="file"
+              onChange={(e) => handleFileChange(e, "MFB")}
+              name="shippingManifestBack"
+            />
+          </div>
+          <button className="upload-button" onClick={handleUpload}>
+            Upload File
+          </button>
+          <button className="history-button">Manifest History</button>
+        </div>
+      ) : (
+        <div>
+          <div>
+            <label htmlFor="shippingManifestFront" className="fileInputLabel">
+              Job Number:{" "}
+            </label>
+            <input
+              type="text"
+              onChange={(e) => setJobNumber(e.target.value)}
+              name="jobNumber"
+            />
+          </div>
+          <button className="upload-button" onClick={handleAnalyseDocs}>Analyze docs</button>
+        </div>
+      )}
     </div>
   );
 }
