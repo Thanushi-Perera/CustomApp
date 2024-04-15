@@ -58,6 +58,7 @@ const Login = () => {
         allowOutsideClick: false,
       });
       console.log(result.role);
+      localStorage.setItem("role", result.role);
       const user = result.role;
       if (user === "user") {
         navigate("/");
