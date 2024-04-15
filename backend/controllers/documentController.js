@@ -122,9 +122,7 @@ export const analyzeDocs = async (req, res) => {
     }
 
     const { totalMatchingFields, totalUnmatchingFields } =
-      analyzeDocuments2(documents);
-    console.log(totalMatchingFields, totalUnmatchingFields);
-
+      analyzeDocuments2(documents)
     const status = generateStatus(totalMatchingFields, totalUnmatchingFields);
     res.status(200).json({
         success: true,
@@ -135,7 +133,6 @@ export const analyzeDocs = async (req, res) => {
             status,
         },
     })
-
 
   } catch (error) {
     res.status(500).json({

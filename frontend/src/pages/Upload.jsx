@@ -45,7 +45,6 @@ export default function Upload() {
             },
           })
           .then((response) => {
-            console.log("File uploaded successfully:", response.data);
             axios
               .post(
                 "http://localhost:4000/api/v1/documents",
@@ -74,7 +73,6 @@ export default function Upload() {
       axios
         .get(`http://localhost:4000/api/v1/documents/analyze/${jobNumber}`)
         .then((response) => {
-          console.log("Documents analyzed successfully:", response.data);
           // Perform any additional actions after successful analysis
           if (response.data.success) {
             if (response.data.data.status === "Matching") {
