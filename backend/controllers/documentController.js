@@ -157,3 +157,37 @@ export const getAllDocuments = async (req, res) => {
     });
   }
 };
+
+export const getAllJobs = async (req, res) => {
+  try {
+    const allDocuments = await Document.find({});
+    const jobs = {};
+    allDocuments.forEach((doc) => {
+      if (!Object.keys(jobs).includes(doc._doc.JobNumber)) {
+        jobs[doc._doc.JobNumber] = {
+          totalDocs: 1,
+          docTypes: [doc._doc.DocType],
+          voyageNo: doc._doc.Voyage_No ?? null,
+          JobNumber: doc._doc.JobNumber,
+        };
+      } else {
+        jobs[doc._doc.JobNumber].totalDocs++;
+        jobs[doc._doc.JobNumber].docTypes.push(doc._doc.DocType);
+        if (!jobs[doc._doc.JobNumber].voyageNo && doc._doc.Voyage_No) {
+          jobs[doc._doc.JobNumber].voyageNo = doc.Voyage_No;
+        }
+      }
+    });
+    res.status(200).json({
+      success: true,
+      message: "Successfully get all jobs",
+      data: jobs,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Unable to find jobs",
+    });
+  }
+}

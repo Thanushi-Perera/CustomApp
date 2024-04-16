@@ -3,12 +3,16 @@ import mongoose from "mongoose";
 const documentSchema = new mongoose.Schema(
   {
     DocType: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     JobNumber: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
+    },
+    ImageURL: {
+      type: String,
+      required: true,
     },
     BL_No: {
       type: String,
