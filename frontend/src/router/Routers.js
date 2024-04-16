@@ -6,6 +6,7 @@ import Home from "./../pages/Home";
 import Login from "./../pages/Login";
 import Register from "./../pages/Register";
 import Upload from "../pages/Upload";
+import Job from "../pages/Job";
 
 const Routers = () => {
   return (
@@ -15,6 +16,7 @@ const Routers = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/upload/:role" element={<Upload />} />
+      <Route path="/job/:jobNumber" element={<Job />} />
     </Routes>
   );
 };

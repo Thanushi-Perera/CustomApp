@@ -2,13 +2,30 @@ import React, { useEffect, useState } from "react";
 import axios from "axios"; // Import Axios for making HTTP requests
 import "../styles/upload.css"; // Import CSS file for styling
 import Swal from "sweetalert2";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faFolder } from '@fortawesome/free-solid-svg-icons';
+import {useNavigate} from "react-router-dom";
 
 export default function Upload() {
 
+  const navigate = useNavigate();
+
   const [selectedFiles, setSelectedFiles] = useState(null);
   const [jobNumber, setJobNumber] = useState(null);
+  const [jobs, setJobs] = useState([]);
 
   const userRole = localStorage.getItem("role");
+
+  useEffect(() => {
+    axios
+      .get("http://localhost:4000/api/v1/documents/jobs")
+      .then((response) => {
+        setJobs(Object.values(response.data.data));
+      })
+      .catch((error) => {
+        console.error("Error fetching jobs:", error);
+      });
+  }, [])
 
   const handleFileChange = (event, fileName) => {
     setSelectedFiles((prev) => ({
@@ -224,6 +241,7 @@ export default function Upload() {
         </div>
       ) : (
         <div>
+        <div>
           <div>
             <label htmlFor="shippingManifestFront" className="fileInputLabel">
               Job Number:{" "}
@@ -235,6 +253,18 @@ export default function Upload() {
             />
           </div>
           <button className="upload-button" onClick={handleAnalyseDocs}>Analyze docs</button>
+        </div>
+        <div>
+          <h1>Jobs</h1>
+          <div>
+            {jobs.map((job) => (
+              <div key={job.JobNumber} onClick={() => navigate(`/job/${job.JobNumber}`)}>
+                <FontAwesomeIcon icon={faFolder} />
+                <p>{job.voyageNo ?? job.JobNumber}</p>
+              </div>
+            ))}
+          </div>
+        </div>
         </div>
       )}
     </div>
